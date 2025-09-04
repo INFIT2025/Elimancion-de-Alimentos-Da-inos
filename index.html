@@ -92,24 +92,24 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables provided by the Canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // --- Firebase Initialization and Authentication ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1uTv8ZiDfDpc7L3IY2R1-VoBRc7puoBE",
+            authDomain: "eliminacion-de-alimentos.firebaseapp.com",
+            projectId: "eliminacion-de-alimentos",
+            storageBucket: "eliminacion-de-alimentos.firebasestorage.app",
+            messagingSenderId: "352209829104",
+            appId: "1:352209829104:web:ffc576805fcbb2d49e1635"
+        };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // State to track if authentication is ready
         let userId = null;
         let dbDocRef = null;
 
-        // Data structure for food groups
         const foodGroups = [
             { id: 'soda-alcohol', emoji: '🥤', name: 'Refrescos y Alcohol' },
             { id: 'fried-foods', emoji: '🍟', name: 'Frituras' },
@@ -118,18 +118,13 @@
             { id: 'ultra-processed', emoji: '🍔', name: 'Ultraprocesados' },
         ];
 
-        // UI elements
         const foodGroupsGrid = document.getElementById('food-groups-grid');
         const progressBar = document.getElementById('progress-bar');
         const totalItems = foodGroups.length;
 
         async function initAuth() {
             try {
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
             } catch (error) {
                 console.error("Error during authentication:", error);
             }
@@ -138,14 +133,14 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 userId = user.uid;
-                dbDocRef = doc(db, `/artifacts/${appId}/users/${userId}/foodEliminationPlan/progress`);
+                // Using projectId instead of appId for a more robust path
+                dbDocRef = doc(db, `/artifacts/${firebaseConfig.projectId}/users/${userId}/foodEliminationPlan/progress`);
                 listenForDataChanges();
             } else {
                 console.log("User is signed out.");
             }
         });
 
-        // --- Firestore Real-time Listener ---
         function listenForDataChanges() {
             if (!dbDocRef) {
                 console.error("Database document reference is not set.");
@@ -160,7 +155,6 @@
             });
         }
 
-        // --- UI Update Function ---
         function updateUI(completedItems) {
             foodGroupsGrid.innerHTML = '';
             let completedCount = 0;
@@ -194,11 +188,9 @@
                 }
             });
 
-            // Update progress bar
             progressBar.value = completedCount;
         }
 
-        // --- Toggle Completion Function ---
         async function toggleCompletion(itemId, completedItems) {
             if (!dbDocRef) {
                 console.error("Database document reference is not set. Cannot update.");
@@ -211,14 +203,12 @@
             };
 
             try {
-                // Use setDoc, which will create the document if it doesn't exist
                 await setDoc(dbDocRef, { completedItems: newCompletedItems, _lastUpdated: new Date() });
             } catch (error) {
                 console.error("Error updating document:", error);
             }
         }
 
-        // Initialize authentication on page load
         initAuth();
 
     </script>
